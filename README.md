@@ -81,7 +81,6 @@
 </div>
 
 <script>
-    // 已自動填入你提供的 Apps Script Web App 網址
     const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyGvBDQPmp03T8Eb-yKmNpUsYwDMSCdYk0HPHjdYfU-Czl25szniZQS6MpiiyuYsl-bGA/exec";
 
     document.getElementById('imageInput').addEventListener('change', function(e) {
