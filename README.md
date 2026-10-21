@@ -81,8 +81,8 @@
 </div>
 
 <script>
-    // ⚠️ 請把下方引號內的網址替換為你 Apps Script 部署後的 Web 應用程式 URL
-    const GAS_WEB_APP_URL = "填入你的_APPS_SCRIPT_WEB_APP_URL";
+    // 已自動填入你提供的 Apps Script Web App 網址
+    const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyGvBDQPmp03T8Eb-yKmNpUsYwDMSCdYk0HPHjdYfU-Czl25szniZQS6MpiiyuYsl-bGA/exec";
 
     document.getElementById('imageInput').addEventListener('change', function(e) {
         const file = e.target.files[0];
@@ -112,7 +112,7 @@
                 }
             })
             .catch(err => {
-                showStatus("❌ 發生網路錯誤，請確認 Apps Script 網址無誤。", "error");
+                showStatus("❌ 發生網路錯誤，請確認 Apps Script 權限已設為所有人。", "error");
                 console.error(err);
             });
         };
