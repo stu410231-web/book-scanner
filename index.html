@@ -3,14 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>📚 書本封面掃描登記系統</title>
+    <title>📚 即時相機書本掃描系統</title>
     <style>
         * {
             box-sizing: border-box;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
         }
         body {
-            background-color: #f4f6f9;
+            background-color: #0f172a;
+            color: #f8fafc;
             margin: 0;
             padding: 20px;
             display: flex;
@@ -19,112 +20,187 @@
             min-height: 100vh;
         }
         .card {
-            background: white;
-            padding: 30px 20px;
-            border-radius: 16px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+            background: #1e293b;
+            padding: 24px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
             width: 100%;
-            max-width: 420px;
+            max-width: 440px;
             text-align: center;
         }
-        h2 { margin-top: 0; color: #2c3e50; font-size: 22px; }
-        p { color: #666; font-size: 14px; margin-bottom: 25px; }
-        .upload-btn {
-            background-color: #4f46e5;
-            color: white;
-            padding: 14px 24px;
+        h2 { margin-top: 0; color: #f1f5f9; font-size: 20px; }
+        p { color: #94a3b8; font-size: 13px; margin-bottom: 20px; }
+        
+        .camera-container {
+            position: relative;
+            width: 100%;
+            height: 320px;
+            background: #000;
+            border-radius: 16px;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border: 2px solid #334155;
+        }
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        /* 掃描框視覺效果 */
+        .scan-frame {
+            position: absolute;
+            width: 70%;
+            height: 60%;
+            border: 2px dashed #38bdf8;
+            border-radius: 12px;
+            box-shadow: 0 0 0 4000px rgba(0, 0, 0, 0.45);
+            pointer-events: none;
+        }
+        .scan-line {
+            position: absolute;
+            width: 100%;
+            height: 2px;
+            background: #38bdf8;
+            top: 0;
+            animation: scan 2s infinite ease-in-out;
+            box-shadow: 0 0 8px #38bdf8;
+        }
+        @keyframes scan {
+            0% { top: 0%; }
+            50% { top: 100%; }
+            100% { top: 0%; }
+        }
+
+        .controls {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+        button {
+            flex: 1;
+            padding: 12px 16px;
             border-radius: 10px;
-            font-size: 16px;
+            border: none;
+            font-size: 15px;
             font-weight: 600;
             cursor: pointer;
-            display: inline-block;
-            transition: all 0.2s ease;
-            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+            transition: all 0.2s;
         }
-        .upload-btn:hover { background-color: #4338ca; transform: translateY(-2px); }
-        input[type="file"] { display: none; }
-        #preview {
-            max-width: 100%;
-            max-height: 250px;
-            margin-top: 20px;
-            border-radius: 10px;
-            display: none;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-        }
+        .btn-capture { background: #38bdf8; color: #0f172a; }
+        .btn-capture:active { transform: scale(0.98); }
+        .btn-switch { background: #334155; color: #f8fafc; }
+
         #status {
-            margin-top: 20px;
+            margin-top: 16px;
             padding: 12px;
-            border-radius: 8px;
-            font-size: 15px;
-            font-weight: 500;
+            border-radius: 10px;
+            font-size: 14px;
             display: none;
         }
-        .loading { background-color: #e0f2fe; color: #0369a1; }
-        .success { background-color: #dcfce7; color: #15803d; }
-        .error { background-color: #fee2e2; color: #b91c1c; }
+        .loading { background: #0284c7; color: white; }
+        .success { background: #16a34a; color: white; }
+        .error { background: #dc2626; color: white; }
+        
+        canvas { display: none; }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <h2>📖 拍照記錄書名</h2>
-    <p>拍攝或上傳書本封面照片，系統將自動辨識書名並儲存至 Google 試算表。</p>
+    <h2>📷 即時掃描對準書本</h2>
+    <p>將書本封面對準框框內，點擊按鈕進行辨識並登記。</p>
 
-    <label class="upload-btn">
-        📷 拍攝 / 上傳照片
-        <input type="file" id="imageInput" accept="image/*" capture="environment">
-    </label>
+    <div class="camera-container">
+        <video id="video" autoplay playsinline></video>
+        <div class="scan-frame">
+            <div class="scan-line"></div>
+        </div>
+    </div>
 
-    <br>
-    <img id="preview" alt="照片預覽">
+    <div class="controls">
+        <button class="btn-switch" id="switchBtn">🔄 切換前後鏡頭</button>
+        <button class="btn-capture" id="captureBtn">📸 拍攝辨識</button>
+    </div>
+
     <div id="status"></div>
+    <canvas id="canvas"></canvas>
 </div>
 
 <script>
     const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyGvBDQPmp03T8Eb-yKmNpUsYwDMSCdYk0HPHjdYfU-Czl25szniZQS6MpiiyuYsl-bGA/exec";
 
-    document.getElementById('imageInput').addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        if (!file) return;
+    let video = document.getElementById('video');
+    let canvas = document.getElementById('canvas');
+    let currentStream = null;
+    let facingMode = "environment"; // 預設使用後置鏡頭，若需要預設前置可改為 "user"
 
-        const reader = new FileReader();
-        const preview = document.getElementById('preview');
-        const status = document.getElementById('status');
-
-        reader.onload = function(event) {
-            preview.src = event.target.result;
-            preview.style.display = "inline-block";
-            showStatus("⏳ AI 辨識中並儲存至試算表，請稍候...", "loading");
-
-            const base64Data = event.target.result.split(',')[1];
-
-            fetch(GAS_WEB_APP_URL, {
-                method: 'POST',
-                body: JSON.stringify({ image: base64Data })
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.status === 'success') {
-                    showStatus(`✅ 成功寫入！<br><b>《${data.title}》</b>`, "success");
-                } else {
-                    showStatus("❌ 辨識失敗：" + data.message, "error");
-                }
-            })
-            .catch(err => {
-                showStatus("❌ 發生網路錯誤，請確認 Apps Script 權限已設為所有人。", "error");
-                console.error(err);
+    // 開啟相機
+    async function startCamera() {
+        if (currentStream) {
+            currentStream.getTracks().forEach(track => track.stop());
+        }
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: facingMode }
             });
-        };
+            currentStream = stream;
+            video.srcObject = stream;
+        } catch (err) {
+            showStatus("❌ 無法取得相機權限：" + err.message, "error");
+        }
+    }
 
-        reader.readAsDataURL(file);
+    // 切換前置/後置鏡頭
+    document.getElementById('switchBtn').addEventListener('click', () => {
+        facingMode = (facingMode === "user") ? "environment" : "user";
+        startCamera();
+    });
+
+    // 拍照並傳送
+    document.getElementById('captureBtn').addEventListener('click', () => {
+        if (!currentStream) return;
+
+        // 設定 Canvas 大小與畫布截圖
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        let ctx = canvas.getContext('2d');
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        // 轉成 Base64
+        let base64Data = canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
+
+        showStatus("⏳ AI 辨識中並寫入試算表...", "loading");
+
+        fetch(GAS_WEB_APP_URL, {
+            method: 'POST',
+            body: JSON.stringify({ image: base64Data })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'success') {
+                showStatus(`✅ 辨識成功！<br><b>《${data.title}》</b>`, "success");
+            } else {
+                showStatus("❌ 辨識失敗：" + data.message, "error");
+            }
+        })
+        .catch(err => {
+            showStatus("❌ 發生網路錯誤，請重新試試。", "error");
+            console.error(err);
+        });
     });
 
     function showStatus(text, className) {
-        const status = document.getElementById('status');
+        let status = document.getElementById('status');
         status.innerHTML = text;
         status.className = className;
         status.style.display = "block";
     }
+
+    // 頁面載入自動開啟鏡頭
+    startCamera();
 </script>
 
 </body>
